@@ -11,6 +11,10 @@ RUN apt-get update && apt-get install -y \
     unzip \
     libpq-dev \
     libzip-dev \
+    libssl-dev \
+    pkg-config \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
     && docker-php-ext-install pdo pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip \
     && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
@@ -27,11 +31,10 @@ RUN useradd -G www-data,root -u 1000 -d /home/dockeruser dockeruser \
 # Establecer directorio de trabajo
 WORKDIR /var/www
 
-# Copiar código de la aplicación
-COPY . /var/www
-
-# Cambiar permisos
-RUN chown -R dockeruser:dockeruser /var/www
+# Cambiar permisos (con manejo de errores para directorios que pueden no existir aún)
+RUN chown -R dockeruser:dockeruser /var/www \
+    && mkdir -p storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
 # Usuario por defecto
 USER dockeruser
